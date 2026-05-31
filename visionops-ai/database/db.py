@@ -1,6 +1,8 @@
+import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 DB_CONFIG = {
     "host": "127.0.0.1",
@@ -10,8 +12,9 @@ DB_CONFIG = {
     "password": "visionops",
 }
 
-
 def get_connection():
+    if DATABASE_URL:
+        return psycopg2.connect(DATABASE_URL)
     return psycopg2.connect(**DB_CONFIG)
 
 
