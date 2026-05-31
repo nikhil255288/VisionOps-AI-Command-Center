@@ -41,7 +41,11 @@ print("✅ Video opened successfully")
 last_active_people = 0
 last_total_visitors = 0
 saved_event_keys = set()
+saved_alert_keys = set()
 frame_count = 0
+
+MAX_FRAMES = 180
+FRAME_SKIP = 8
 
 while cap.isOpened():
     success, frame = cap.read()
@@ -52,48 +56,56 @@ while cap.isOpened():
 
     frame_count += 1
 
-    # Process only every 5th frame for Render speed
-    if frame_count % 5 != 0:
+    if frame_count > MAX_FRAMES:
+        print("✅ Max frame limit reached")
+        break
+
+    if frame_count % FRAME_SKIP != 0:
         continue
 
-    results = model(frame, imgsz=416, conf=0.25, verbose=False)[0]
+    results = model(frame, imgsz=320, conf=0.20, verbose=False)[0]
     detections = sv.Detections.from_ultralytics(results)
 
-    # COCO class 0 = person
     detections = detections[detections.class_id == 0]
 
     tracked_detections = tracker.update_with_detections(detections)
-
     track_ids = tracked_detections.tracker_id
 
-    if track_ids is not None:
-        print("Detected people:", len(tracked_detections))
-        print("Track IDs:", track_ids)
-
-        if session_id is not None:
-            for box, tracker_id in zip(
-                tracked_detections.xyxy,
-                tracked_detections.tracker_id
-            ):
-                x1, y1, x2, y2 = box
-
-                center_x = (x1 + x2) / 2
-                center_y = (y1 + y2) / 2
-
-                save_tracking_point(session_id, tracker_id, center_x, center_y)
-
-    total_visitors = count_visitors(track_ids)
     active_people = len(tracked_detections)
+    total_visitors = count_visitors(track_ids)
+
+    print("Frame:", frame_count)
+    print("Detected people:", active_people)
+    print("Track IDs:", track_ids)
+    print("Total visitors:", total_visitors)
+
+    if session_id is not None and track_ids is not None:
+        for box, tracker_id in zip(tracked_detections.xyxy, track_ids):
+            x1, y1, x2, y2 = box
+
+            center_x = float((x1 + x2) / 2)
+            center_y = float((y1 + y2) / 2)
+
+            save_tracking_point(
+                session_id,
+                int(tracker_id),
+                center_x,
+                center_y
+            )
 
     last_active_people = active_people
     last_total_visitors = total_visitors
 
     if active_people >= 4:
-        save_alert(
-            "crowd_congestion",
-            f"Crowd congestion detected: {active_people} people active in frame",
-            "high"
-        )
+        alert_key = ("crowd_congestion", session_id)
+
+        if alert_key not in saved_alert_keys:
+            save_alert(
+                "crowd_congestion",
+                f"Crowd congestion detected: {active_people} people active in frame",
+                "high"
+            )
+            saved_alert_keys.add(alert_key)
 
     events = generate_events(active_people, total_visitors)
     print("Events:", events)
