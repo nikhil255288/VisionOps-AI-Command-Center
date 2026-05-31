@@ -1,13 +1,17 @@
 import os
+import sys
 import subprocess
 
-from database.db import get_alerts
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, PROJECT_ROOT)
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from dashboard.report_generator import generate_pdf_report
 import plotly.graph_objects as go
+
 from database.db import (
+    get_alerts,
     get_events,
     get_sessions,
     create_session,
@@ -15,6 +19,8 @@ from database.db import (
     get_dwell_times,
     get_session_summary
 )
+
+from dashboard.report_generator import generate_pdf_report
 
 st.set_page_config(
     page_title="VisionOps AI",
