@@ -1,3 +1,12 @@
+import os
+import psycopg2
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise Exception("DATABASE_URL not found")
+
+SCHEMA = """
 CREATE TABLE IF NOT EXISTS stores (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100),
@@ -57,3 +66,13 @@ CREATE TABLE IF NOT EXISTS analytics_snapshots (
     anomaly_count INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+"""
+
+conn = psycopg2.connect(DATABASE_URL)
+cur = conn.cursor()
+cur.execute(SCHEMA)
+conn.commit()
+cur.close()
+conn.close()
+
+print("✅ Database tables created successfully")
