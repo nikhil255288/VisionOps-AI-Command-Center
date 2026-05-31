@@ -3,4 +3,4 @@ services:
     name: visionops-ai
     env: python
     buildCommand: pip install -r visionops-ai/requirements.txt
-    startCommand: python -m streamlit run visionops-ai/dashboard/app.py --server.port $PORT --server.address 0.0.0.0
+    startCommand: cd visionops-ai && python -m streamlit run dashboard/app.py --server.port $PORT --server.address 0.0.0.0
