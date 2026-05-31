@@ -1,0 +1,8 @@
+streamlit
+pandas
+numpy
+plotly
+opencv-python-headless
+ultralytics
+reportlab
+psycopg2-binary

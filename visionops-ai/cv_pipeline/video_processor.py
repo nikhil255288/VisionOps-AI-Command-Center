@@ -10,9 +10,7 @@ from cv_pipeline.event_generator import generate_events
 from cv_pipeline.visitor_counter import count_visitors
 
 
-# -----------------------------
-# Resolve video path safely
-# -----------------------------
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 video_path = (

@@ -23,7 +23,6 @@ st.set_page_config(
 )
 
 
-# ---------------- UI CSS ----------------
 st.markdown("""
 <style>
 .stApp {
@@ -87,7 +86,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ---------------- HERO ----------------
 st.markdown("""
 <div class="hero">
     <h1>🧠 VisionOps AI Command Center</h1>
@@ -99,7 +97,6 @@ st.markdown("""
 st.write("")
 
 
-# ---------------- UPLOAD VIDEO ----------------
 st.subheader("📤 Upload CCTV / Store Video")
 
 uploaded_video = st.file_uploader(
@@ -145,7 +142,6 @@ if uploaded_video is not None:
                 st.code(result.stderr)
 
 
-# ---------------- SESSION FILTER ----------------
 st.subheader("🎥 Video Session Analytics")
 
 sessions = get_sessions()
@@ -172,7 +168,6 @@ else:
 events_df = pd.DataFrame(events)
 
 
-# ---------------- METRICS ----------------
 if events_df.empty:
     total_events = 0
     high_alerts = 0
@@ -209,7 +204,6 @@ for col, item in zip([c1, c2, c3, c4], cards):
         """, unsafe_allow_html=True)
 
 
-# ---------------- ALERT CENTER ----------------
 st.subheader("🚨 Smart Alert Center")
 
 alerts = get_alerts()
@@ -229,7 +223,6 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
 
-# ---------------- CHARTS ----------------
 st.write("")
 st.subheader("📈 Futuristic Analytics")
 
