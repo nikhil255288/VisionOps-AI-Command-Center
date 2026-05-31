@@ -119,6 +119,7 @@ if st.button("⚡ Load Demo Analytics"):
 
     if result.returncode == 0:
         st.success("Demo analytics loaded ✅ Refresh the page.")
+        st.rerun()
     else:
         st.error(result.stderr)
 

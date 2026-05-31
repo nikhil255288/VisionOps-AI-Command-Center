@@ -10,7 +10,6 @@ from cv_pipeline.event_generator import generate_events
 from cv_pipeline.visitor_counter import count_visitors
 
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 video_path = (
@@ -23,20 +22,13 @@ if not video_path.is_absolute():
     video_path = PROJECT_ROOT / video_path
 
 video_path = str(video_path)
-
 session_id = int(sys.argv[2]) if len(sys.argv) > 2 else None
 
 print("Video path:", video_path)
 print("Session ID:", session_id)
 
-
-
-model = YOLO("yolov8n.pt")
+model = YOLO(str(PROJECT_ROOT / "yolov8n.pt"))
 tracker = sv.ByteTrack()
-
-box_annotator = sv.BoxAnnotator()
-label_annotator = sv.LabelAnnotator()
-
 
 cap = cv2.VideoCapture(video_path)
 
@@ -46,10 +38,10 @@ if not cap.isOpened():
 
 print("✅ Video opened successfully")
 
-
 last_active_people = 0
 last_total_visitors = 0
 saved_event_keys = set()
+frame_count = 0
 
 while cap.isOpened():
     success, frame = cap.read()
@@ -58,40 +50,55 @@ while cap.isOpened():
         print("✅ Video ended or empty frame received")
         break
 
-    results = model(frame)[0]
+    frame_count += 1
+
+    # Process only every 5th frame for Render speed
+    if frame_count % 5 != 0:
+        continue
+
+    results = model(frame, imgsz=416, conf=0.25, verbose=False)[0]
     detections = sv.Detections.from_ultralytics(results)
 
+    # COCO class 0 = person
     detections = detections[detections.class_id == 0]
 
     tracked_detections = tracker.update_with_detections(detections)
-    if session_id is not None and tracked_detections.tracker_id is not None:
-        for box, tracker_id in zip(tracked_detections.xyxy, tracked_detections.tracker_id):
-            x1, y1, x2, y2 = box
-
-            center_x = (x1 + x2) / 2
-            center_y = (y1 + y2) / 2
-
-            save_tracking_point(session_id, tracker_id, center_x, center_y)
 
     track_ids = tracked_detections.tracker_id
 
+    if track_ids is not None:
+        print("Detected people:", len(tracked_detections))
+        print("Track IDs:", track_ids)
+
+        if session_id is not None:
+            for box, tracker_id in zip(
+                tracked_detections.xyxy,
+                tracked_detections.tracker_id
+            ):
+                x1, y1, x2, y2 = box
+
+                center_x = (x1 + x2) / 2
+                center_y = (y1 + y2) / 2
+
+                save_tracking_point(session_id, tracker_id, center_x, center_y)
+
     total_visitors = count_visitors(track_ids)
     active_people = len(tracked_detections)
-    if active_people >= 5:
+
+    last_active_people = active_people
+    last_total_visitors = total_visitors
+
+    if active_people >= 4:
         save_alert(
             "crowd_congestion",
             f"Crowd congestion detected: {active_people} people active in frame",
             "high"
         )
 
-    last_active_people = active_people
-    last_total_visitors = total_visitors
-
     events = generate_events(active_people, total_visitors)
+    print("Events:", events)
 
     for event in events:
-        print("EVENT:", event)
-
         event_key = (
             event.get("event_type"),
             event.get("zone"),
@@ -102,58 +109,13 @@ while cap.isOpened():
         if event_key not in saved_event_keys:
             if session_id is not None:
                 save_event(event, session_id)
-                print("✅ Event saved to DB")
+                print("✅ Event saved to DB:", event)
             else:
                 print("⚠️ No session_id provided, event not saved to DB")
 
             saved_event_keys.add(event_key)
 
-    labels = [
-        f"Person #{tracker_id}"
-        for tracker_id in tracked_detections.tracker_id
-    ]
-
-    annotated_frame = box_annotator.annotate(
-        scene=frame.copy(),
-        detections=tracked_detections
-    )
-
-    annotated_frame = label_annotator.annotate(
-        scene=annotated_frame,
-        detections=tracked_detections,
-        labels=labels
-    )
-
-    cv2.rectangle(annotated_frame, (20, 20), (430, 100), (0, 0, 0), -1)
-
-    cv2.putText(
-        annotated_frame,
-        f"Active People: {active_people}",
-        (35, 55),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.8,
-        (0, 255, 255),
-        2
-    )
-
-    cv2.putText(
-        annotated_frame,
-        f"Unique Visitors: {total_visitors}",
-        (35, 85),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.8,
-        (0, 255, 0),
-        2
-    )
-
-    cv2.imshow("VisionOps AI - Visitor Tracking", annotated_frame)
-
-    if cv2.waitKey(1) & 0xFF == ord("q"):
-        break
-
-
 cap.release()
-cv2.destroyAllWindows()
 
 print("✅ Processing completed")
 print("Final active people:", last_active_people)
