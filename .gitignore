@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.env
+venv/
+.venv/
+
+data/exports/
+data/heatmaps/
+
+*.mp4
+*.avi
+
+*.db
+
+.idea/
+.vscode/
