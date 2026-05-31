@@ -103,12 +103,24 @@ st.markdown("""
 st.write("")
 
 
-st.subheader("📤 Upload CCTV / Store Video")
+st.subheader(" Upload CCTV / Store Video")
 
 uploaded_video = st.file_uploader(
     "Upload video for AI analysis",
     type=["mp4", "avi", "mov", "mpeg4"]
 )
+
+if st.button("⚡ Load Demo Analytics"):
+    result = subprocess.run(
+        ["python", "seed_demo_data.py"],
+        capture_output=True,
+        text=True
+    )
+
+    if result.returncode == 0:
+        st.success("Demo analytics loaded ✅ Refresh the page.")
+    else:
+        st.error(result.stderr)
 
 if uploaded_video is not None:
     os.makedirs("sample_data", exist_ok=True)
@@ -148,7 +160,7 @@ if uploaded_video is not None:
                 st.code(result.stderr)
 
 
-st.subheader("🎥 Video Session Analytics")
+st.subheader(" Video Session Analytics")
 
 sessions = get_sessions()
 
@@ -188,7 +200,7 @@ else:
     latest_zone = events_df.iloc[0]["zone"]
 
 
-st.subheader("⚡ Live Intelligence Overview")
+st.subheader(" Live Intelligence Overview")
 
 c1, c2, c3, c4 = st.columns(4)
 
@@ -210,7 +222,7 @@ for col, item in zip([c1, c2, c3, c4], cards):
         """, unsafe_allow_html=True)
 
 
-st.subheader("🚨 Smart Alert Center")
+st.subheader(" Smart Alert Center")
 
 alerts = get_alerts()
 alerts_df = pd.DataFrame(alerts)
@@ -230,7 +242,7 @@ else:
 
 
 st.write("")
-st.subheader("📈 Futuristic Analytics")
+st.subheader(" Futuristic Analytics")
 
 if events_df.empty:
     st.info("No events found for this selected session yet.")
